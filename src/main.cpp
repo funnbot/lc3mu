@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 		objs.push_back((objsRaw[i] << 8) | (objsRaw[i + 1] & 0xFF));
 	}
 
-	write_OS();
+	load_OS();
 	load(objs);
 	run();
 
