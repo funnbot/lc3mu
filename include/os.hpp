@@ -1,5 +1,5 @@
-#include <string>
 #include <cstdint>
+#include <string>
 
 void write_OS(uint16_t memory[]) {
   // Trap vector table (valid entries)
@@ -10,14 +10,15 @@ void write_OS(uint16_t memory[]) {
   memory[0x0024] = 0x04E0;
   memory[0x0025] = 0xFD70;
   // Implementation of GETC
-  memory[0x0400] = 0x3E07;
-  memory[0x0401] = 0x5020;
-  memory[0x0402] = 0xB003;
-  memory[0x0403] = 0xA003;
-  memory[0x0404] = 0x2E03;
+  memory[0x0400] = 0x3E08;
+  memory[0x0401] = 0x2004;
+  memory[0x0402] = 0xB004;
+  memory[0x0403] = 0xA004;
+  memory[0x0404] = 0x2E04;
   memory[0x0405] = 0xC1C0;
-  memory[0x0406] = 0xFE00;
-  memory[0x0407] = 0xFE02;
+  memory[0x0406] = 0x8000;
+  memory[0x0407] = 0xFE00;
+  memory[0x0408] = 0xFE02;
   // Implementation of OUT
   memory[0x0430] = 0x3E0A;
   memory[0x0431] = 0x3208;
@@ -132,8 +133,6 @@ void write_OS(uint16_t memory[]) {
 
   memory[0xFDA5] = 0xFFFE;
   memory[0xFDA6] = 0x7FFF;
-  // Keyboard status register
-  memory[0xFE00] = 0x8000;
   // Display status register
   memory[0xFE04] = 0x8000;
   // Machine control register

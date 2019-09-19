@@ -26,10 +26,10 @@ WORD KBSR = 0xFE00, KBDR = 0xFE02, DSR = 0xFE04, DDR = 0xFE06;
 
 void run() {
   for (;;) {
-    update_input();
-
     IR = memory[PC++];
     OP opcode = static_cast<OP>(get_bits(IR, 12, 4));
+
+    // std::cout << OP_decode[get_bits(IR, 12, 4)] << std::endl;
 
     switch (opcode) {
       case OP::ADD:
@@ -93,6 +93,7 @@ void run() {
     }
 
     if (get_halt()) return;
+    update_input();
     update_output();
   }
 }
@@ -104,9 +105,7 @@ void load(const std::vector<WORD>& prgm) {
   PC = orig;
 }
 
-void load_OS() {
-  write_OS(memory);
-}
+void load_OS() { write_OS(memory); }
 
 void reset() {
   for (int i = 0; i < 8; i++) registers[i] = 0;
@@ -116,10 +115,11 @@ void reset() {
 }
 
 inline void update_input() {
-  if ((memory[KBSR] & 0x8000) == 0) {  // keyboard ready
-    std::cin >> memory[KBDR];
-    memory[KBDR] &= 0x00FF;  // Chop upper 8 bits
-    memory[KBSR] |= 0x8000;  // reset ready bit
+  if ((memory[KBSR] >> 15) == 1) {  // keyboard ready
+    char c;
+    std::cin >> c;
+    memory[KBDR] = c;
+    memory[KBSR] = 0;  // reset ready bit
   }
 }
 
