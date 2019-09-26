@@ -45,23 +45,8 @@ enum class OP {
   TRAP
 };
 
-std::string OP_decode[] = {
-  "BR",
-  "ADD",
-  "LD",
-  "ST",
-  "JSR",
-  "AND",
-  "LDR",
-  "STR",
-  "RTI",
-  "NOT",
-  "LDI",
-  "STI",
-  "JMP",
-  "Reserved",
-  "LEA",
-  "TRAP"
-};
+std::string OP_decode[] = {"BR",  "ADD",      "LD",  "ST",  "JSR", "AND",
+                           "LDR", "STR",      "RTI", "NOT", "LDI", "STI",
+                           "JMP", "Reserved", "LEA", "TRAP"};
 
 #endif

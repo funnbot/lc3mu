@@ -10,9 +10,9 @@ file    :=
 LIBRARIES	:=
 
 ifeq ($(OS),Windows_NT)
-EXECUTABLE	:= main.exe
+EXECUTABLE	:= lc3mu.exe
 else
-EXECUTABLE	:= main
+EXECUTABLE	:= lc3mu
 endif
 
 all: $(BIN)/$(EXECUTABLE)
