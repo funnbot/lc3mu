@@ -4,14 +4,17 @@
 
 #include <iostream>
 #include <string>
-
-#define REG(idx) registers[get_bits(IR, (idx), 3)]
+  
+#define REG(idx) registers[GET_BITS(IR, (idx), 3)]
 #define DR REG(9)
 #define SR1 REG(6)
 #define SR2 REG(0)
-#define UIMM(len) get_bits(IR, 0, (len))
+#define UIMM(len) GET_BITS(IR, 0, (len))
 #define IMM(len) sign_imm(UIMM(len), len)
-#define FLAG(idx) get_bits(IR, (idx), 1)
+#define FLAG(idx) (IR & (1 << idx))
+
+#define GET_BITS(num, idx, len) ((num >> idx) & ~(0xFFFF << len))
+#define IS_RUNNING() (memory[MCR] & 0x8000)
 
 WORD memory[MEMORY_SIZE];
 WORD registers[8];
@@ -24,12 +27,38 @@ WORD MCR = 0xFFFE;
 // IO
 WORD KBSR = 0xFE00, KBDR = 0xFE02, DSR = 0xFE04, DDR = 0xFE06;
 
-void run() {
-  for (;;) {
-    IR = memory[PC++];
-    OP opcode = static_cast<OP>(get_bits(IR, 12, 4));
+inline void update_io() {
+  if ((memory[KBSR] >> 15) == 1) {  // keyboard ready
+    char c;
+    std::cin >> c;
+    memory[KBDR] = c;
+    memory[KBSR] = 0;  // reset ready bit
+  }
 
-    // std::cout << OP_decode[get_bits(IR, 12, 4)] << std::endl;
+  if (memory[DDR] != 0) {                                  // display ready
+    std::cout << static_cast<char>(memory[DDR] & 0x00FF);  // Chop upper 8 bits
+    memory[DDR] = 0;
+  }
+}
+
+// convert num of arbitrary bit len to 16 bit signed
+inline int16_t sign_imm(WORD num, WORD len) {
+  if (num & 1 << (len - 1)) return -((num ^ ~(0xFFFF << len)) + 1);
+  return num;
+}
+
+// psr bits 0 - 2
+void set_condition(int16_t num) {
+  PSR &= 0xFFF8;
+  if (num > 0) PSR |= 1U;
+  if (num == 0) PSR |= 2U;
+  if (num < 0) PSR |= 4U;
+}
+
+void run() {
+  while (IS_RUNNING()) {
+    IR = memory[PC++];
+    OP opcode = static_cast<OP>(GET_BITS(IR, 12, 4));
 
     switch (opcode) {
       case OP::ADD:
@@ -43,7 +72,7 @@ void run() {
         break;
 
       case OP::BR:
-        if ((get_bits(PSR, 0, 3) & get_bits(IR, 9, 3))) PC += IMM(9);
+        if ((GET_BITS(PSR, 0, 3) & GET_BITS(IR, 9, 3))) PC += IMM(9);
         break;
 
       case OP::JMP:
@@ -92,9 +121,7 @@ void run() {
         return;
     }
 
-    if (get_halt()) return;
-    update_input();
-    update_output();
+    update_io();
   }
 }
 
@@ -113,40 +140,3 @@ void reset() {
   IR = 0;
   PSR = 0x8002;
 }
-
-inline void update_input() {
-  if ((memory[KBSR] >> 15) == 1) {  // keyboard ready
-    char c;
-    std::cin >> c;
-    memory[KBDR] = c;
-    memory[KBSR] = 0;  // reset ready bit
-  }
-}
-
-inline void update_output() {
-  if (memory[DDR] != 0) {                                  // display ready
-    std::cout << static_cast<char>(memory[DDR] & 0x00FF);  // Chop upper 8 bits
-    memory[DDR] = 0;
-  }
-}
-
-// Get bits from idx to idx + len of a uint16
-inline WORD get_bits(WORD num, WORD idx, WORD len) {
-  return ((num >> idx) & ~(0xFFFF << len));
-}
-
-// convert num of arbitrary bit len to 16 bit signed
-inline int16_t sign_imm(WORD num, WORD len) {
-  return get_bits(num, len - 1, 1) ? (~((num ^ ~((~0U) << len)) + 1) + 1) : num;
-}
-
-// psr bits 0 - 2
-void set_condition(int16_t num) {
-  PSR &= 0xFFF8;
-  if (num > 0) PSR |= 1U;
-  if (num == 0) PSR |= 2U;
-  if (num < 0) PSR |= 4U;
-}
-
-// mcr bit 15 (1 clock is running)
-inline bool get_halt() { return (memory[MCR] & 0x8000) == 0; }
