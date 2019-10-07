@@ -5,22 +5,34 @@
 
 const char help_message[] =
     "Usage:\n"
-    "   lc3mu <input.obj>\n";
+    "   lc3mu <input.obj>\n"
+    "   lc3mu -d <input.obj>\n"
+    "Options:\n"
+    "   -d --debug      Step through, set breakpoints, and inspect values";
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     std::cout << "LC3 Emulator\n\n" << help_message;
     return 0;
   }
-  if (argc > 2) {
-    std::cout << "Too many arguments\n\n" << help_message;
-    return 0;
+  std::string in_file = "";
+  bool debug = false;
+  if (argc == 2) {
+    in_file = argv[1];
+  } else if (argc == 3) {
+    if (strcmp(argv[1], "-d") == 0 || strcmp(argv[1], "--debug"))
+      debug = true;
+    else {
+      std::cout << "Invalid option " << argv[1] << std::endl;
+      return 0;
+    }
+    in_file = argv[2];
   }
 
   std::ifstream ifile;
-  ifile.open(argv[1]);
+  ifile.open(in_file);
   if (!ifile.is_open()) {
-    std::cout << "Failed to open file " << argv[1] << "\n\n" << help_message;
+    std::cout << "Failed to open file " << in_file << "\n\n" << help_message;
     return 0;
   }
 
@@ -34,8 +46,14 @@ int main(int argc, char *argv[]) {
   }
 
   load_OS();
-  load(objs);
-  run();
+
+  if (debug) {
+    load_debug(objs);
+    run_debug();
+  } else {
+    load(objs);
+    run();
+  }
 
   return 0;
 }

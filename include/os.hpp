@@ -1,6 +1,3 @@
-#include <cstdint>
-#include <string>
-
 void write_OS(uint16_t memory[]) {
   // Trap vector table (valid entries)
   memory[0x0020] = 0x0400;
@@ -61,10 +58,8 @@ void write_OS(uint16_t memory[]) {
   memory[0x04A6] = 0xC1C0;  // RET
   memory[0x04A7] = 0x3001;  // SaveR7 (.BLKW #1)
   /* the "Input a character> " message goes here */
-  std::string inputPrompt = "Input a character> \0";
-  for (size_t i = 0; i < inputPrompt.size(); i++) {
-    memory[0x04A8 + i] = inputPrompt[i];
-  }
+  char inputPrompt[] = "Input a character> \0";
+  for (size_t i = 0; i < 21; i++) memory[0x04A8 + i] = inputPrompt[i];
 
   // Implementation of PUTSP
   memory[0x04E0] = 0x3E27;
@@ -126,10 +121,8 @@ void write_OS(uint16_t memory[]) {
   memory[0xFD7B] = 0x2E03;
   memory[0xFD7C] = 0xC1C0;
   /* the "halting the processor" message goes here */
-  std::string haltMessage = "\n----- Halting the processor ----- \n\0";
-  for (size_t i = 0; i < haltMessage.size(); i++) {
-    memory[0xFD80 + i] = haltMessage[i];
-  }
+  char haltMessage[] = "\n----- Halting the processor ----- \n\0";
+  for (size_t i = 0; i < 38; i++) memory[0xFD80 + i] = haltMessage[i];
 
   memory[0xFDA5] = 0xFFFE;
   memory[0xFDA6] = 0x7FFF;

@@ -1,16 +1,17 @@
 #ifndef EMU_INCLUDE
 #define EMU_INCLUDE
 
-#include <cstdint>
 #include <vector>
 
-typedef uint16_t WORD;
+typedef unsigned short WORD;
 
 const int MEMORY_SIZE = 0x10000;
 
 void run();
 void load(const std::vector<WORD>& prgm);
 void load_OS();
-void reset();
+
+void load_debug(const std::vector<WORD>& prgm);
+void run_debug();
 
 #endif
