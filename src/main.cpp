@@ -7,49 +7,11 @@
 typedef unsigned short WORD;
 typedef short SWORD;
 
+// clang-format off
 enum class OP {
-    BR,
-    ADD,
-    LD,
-    ST,
-    JSR,
-    AND,
-    LDR,
-    STR,
-    RTI,
-    NOT,
-    LDI,
-    STI,
-    JMP,
-    Reserved,
-    LEA,
-    TRAP
+    BR, ADD, LD, ST, JSR, AND, LDR, STR, RTI, NOT, LDI, STI, JMP, Reserved, LEA, TRAP
 };
-
-std::string OP_decode[] = {"BR",  "ADD",      "LD",  "ST",  "JSR", "AND",
-                           "LDR", "STR",      "RTI", "NOT", "LDI", "STI",
-                           "JMP", "Reserved", "LEA", "TRAP"};
-
-bool open_file(const std::string &path, std::ifstream &ifile) {
-    ifile.open(path);
-    if (!ifile.is_open()) {
-        std::cout << "Failed to open file \"" << path << "\".\n";
-        return false;
-    }
-    return true;
-}
-
-std::vector<WORD> read_words(std::ifstream &ifile) {
-    std::vector<char> bytes((std::istreambuf_iterator<char>(ifile)),
-                            (std::istreambuf_iterator<char>()));
-    std::vector<WORD> words;
-    words.reserve(bytes.size() / 2);
-
-    for (size_t i = 0; i < bytes.size() - 1; i += 2)
-        words.push_back(bytes[i] << 8 | (bytes[i + 1] & 0xFF));
-
-    return words;
-}
+// clang-format on
 
 void run();
 void load(const std::vector<WORD> &prgm);
@@ -62,10 +24,19 @@ int main(int argc, char *argv[]) {
     }
     std::string in_file = argv[1];
 
-    std::ifstream ifile;
-    if (!open_file(in_file, ifile)) return 0;
+    std::ifstream ifile(in_file);
+    if (!ifile.is_open()) {
+        std::cout << "Failed to open file \"" << in_file << "\".\n";
+        return false;
+    }
 
-    std::vector<WORD> objs = read_words(ifile);
+    std::vector<char> bytes((std::istreambuf_iterator<char>(ifile)),
+                            (std::istreambuf_iterator<char>()));
+    std::vector<WORD> objs;
+    objs.reserve(bytes.size() / 2);
+
+    for (size_t i = 0; i < bytes.size() - 1; i += 2)
+        objs.push_back(bytes[i] << 8 | (bytes[i + 1] & 0xFF));
 
     load_OS();
     load(objs);
@@ -89,19 +60,7 @@ WORD *MCR = memory + 0xFFFE;
 WORD *KBSR = memory + 0xFE00, *KBDR = memory + 0xFE02, *DSR = memory + 0xFE04,
      *DDR = memory + 0xFE06;
 
-inline void update_io() {
-    if ((*KBSR & 0x8000) != 0) {  // keyboard ready
-        putchar(10);
-        char *c = getpass("");
-        *KBDR = *c;
-        *KBSR = 0;  // reset ready bit
-    }
-
-    if (*DDR != 0) {  // display ready
-        putchar(*DDR & 0x00FF);
-        *DDR = 0;
-    }
-}
+inline void update_io() {}
 
 // convert num of arbitrary bit len to 16 bit signed
 SWORD sign_imm(WORD num, WORD len) {
@@ -167,11 +126,21 @@ void run() {
                 PC = memory[UIMM(8)];
                 break;
 
-            case OP::RTI: return;
+            case OP::RTI:
             case OP::Reserved: return;
         }
 
-        update_io();
+        if ((*KBSR & 0x8000) != 0) {  // keyboard ready
+            putchar(10);
+            char *c = getpass("");
+            *KBDR = *c;
+            *KBSR = 0;  // reset ready bit
+        }
+
+        if (*DDR != 0) {  // display ready
+            putchar(*DDR & 0x00FF);
+            *DDR = 0;
+        }
     }
 }
 #undef GET_BITS
