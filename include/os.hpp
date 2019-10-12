@@ -1,4 +1,6 @@
-void write_OS(uint16_t memory[]) {
+#pragma once
+
+static void write_OS(uint16_t memory[]) {
   // Trap vector table (valid entries)
   memory[0x0020] = 0x0400;
   memory[0x0021] = 0x0430;
