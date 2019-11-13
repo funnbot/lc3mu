@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
     std::ifstream ifile(in_file);
     if (!ifile.is_open()) {
         std::cout << "Failed to open file \"" << in_file << "\".\n";
-        return false;
+        return 0;
     }
 
     std::vector<char> bytes((std::istreambuf_iterator<char>(ifile)),
@@ -59,8 +59,6 @@ WORD *MCR = memory + 0xFFFE;
 // IO
 WORD *KBSR = memory + 0xFE00, *KBDR = memory + 0xFE02, *DSR = memory + 0xFE04,
      *DDR = memory + 0xFE06;
-
-inline void update_io() {}
 
 // convert num of arbitrary bit len to 16 bit signed
 SWORD sign_imm(WORD num, WORD len) {

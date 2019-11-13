@@ -1,0 +1,131 @@
+; overcomplicated mult for negatives and zero
+; r0 - IN operand a, OUT result
+; r1 - IN operand b, OUT #0
+; r2 - store operand a
+; r3 - store negative test
+func_MULT
+    ST r2, MULT_SAVE_R2
+    ST r3, MULT_SAVE_R3
+    AND r2, r2, #0 ; set r2 and r3 to zero
+    AND r3, r3, #0
+
+    ; a or b is zero return zero
+    AND r0, r0, r0
+    BRz MULT_ARG_OR
+    AND r1, r1, r1
+    BRnp MULT_ARG_ZERO
+        MULT_ARG_OR
+        AND r0, r0, #0
+        AND r1, r1, #0
+        BR MULT_DONE
+    MULT_ARG_ZERO
+
+    ; a is negative
+    AND r0, r0, r0
+    BRp MULT_A_NEG
+        NOT r0, r0
+        ADD r0, r0, #1
+        ADD r3, r3, #1
+    MULT_A_NEG
+
+    ; b is negative
+    AND r1, r1, r1
+    BRp MULT_B_NEG
+        NOT r1, r1
+        ADD r1, r1, #1
+        ADD r3, r3, #-1
+    MULT_B_NEG
+
+    ADD r1, r1, #-1 ; dec 1 from b
+    AND r2, r0, r0 ; save value to add to r2
+    MULT_LOOP
+        ADD r0, r0, r2 ; increase r0 by r2, r1 times
+        ADD r1, r1, #-1 ; dec counter
+    BRp MULT_LOOP
+
+    AND r3, r3, r3 ; sign of r3
+    BRz MULT_NEG_FIX ; negate output
+        NOT r0, r0
+        ADD r0, r0, #1
+    MULT_NEG_FIX
+
+    MULT_DONE
+    LD r2, MULT_SAVE_R2
+    LD r3, MULT_SAVE_R3
+RET
+MULT_SAVE_R2 .fill #0
+MULT_SAVE_R3 .fill #0
+; func_MULT
+
+; Overly complex divide function that accounts for negatives and zero
+; r0 - IN dividend, OUT quotient
+; r1 - IN divisor, OUT remainder
+; r2 - store the division count/quotient
+; r3 - store negative test
+func_DIV
+    ST r2, DIV_SAVE_R2
+    ST r3, DIV_SAVE_R3
+    AND r2, r2, #0 ; init r2 and r3
+    AND r3, r3, #0
+
+    ; Dividend is zero then return zero
+    AND r0, r0, r0 ; get sign of r0
+    BRnp DIV_DIVIDEND_ZERO
+        AND r0, r1, r1 ; set remainder
+        ADD r3, r3, #1 ; disable negate fix
+        BR DIV_DONE ; r2 will be zero/result, remain is r1
+    DIV_DIVIDEND_ZERO
+
+    ; Divisor cant be zero
+    AND r1, r1, r1 ; get sign of r1
+    BRnp DIV_DIVISOR_ZERO
+        HALT ; exception divide by zero
+    DIV_DIVISOR_ZERO
+
+    ; Make the dividend positive
+    AND r0, r0, r0 ; store sign of r0 in cc
+    BRp DIV_DIVIDEND_POS
+        NOT r0, r0
+        ADD r0, r0, #1
+        ADD r3, r3, #1 ; if r3 is zero then out is negative
+    DIV_DIVIDEND_POS
+
+    ; Make divisor negative
+    AND r1, r1, r1 ; store sign of r1 in cc
+    BRn DIV_LOOP ; DIV_DIVISOR_NEG
+        NOT r1, r1
+        ADD r1, r1, #1
+        ADD r3, r3, #-1 ; if r3 is zero then out is negative
+    ; DIV_DIVISOR_NEG
+
+    DIV_LOOP
+        ADD r2, r2, #1 ; inc div count
+        ADD r0, r0, r1 ; sub divisor from dividend
+    BRp DIV_LOOP
+
+    AND r0, r0, r0 ; get sign of remainder
+    BRz DIV_DONE ; DIV_GET_REMAIN ; r0 should only be 0 or neg
+        NOT r1, r1 ; negate r1 to add back to remainder
+        ADD r1, r1, #1 ; final sign dosnt matter
+        ADD r0, r0, r1 ; r0 now holds positive remainder
+        ADD r2, r2, #-1 ; Dec the div count since went one over
+    ; DIV_GET_REMAIN ; r0 was zero, no remainder
+
+    DIV_DONE
+    AND r1, r0, r0 ; copy remainder to r1
+    AND r0, r2, r2 ; copy division count to r0
+
+    ; Fix sign for quotient, remainder is always positive
+    AND r3, r3, r3 ; get sign of neg test
+    BRnp DIV_NEGATE_FIX ; dendpos +1 dsorpos -1 = 0
+        NOT r0, r0
+        ADD r0, r0, #1
+    DIV_NEGATE_FIX
+
+    ; restore registers
+    LD r2, DIV_SAVE_R2
+    LD r3, DIV_SAVE_R3
+RET
+DIV_SAVE_R2 .fill #0
+DIV_SAVE_R3 .fill #0
+; func_DIV
